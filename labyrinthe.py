@@ -8,6 +8,7 @@
 ###############################################################################
 
 # Import
+from math import hypot
 import random
 
 
@@ -116,7 +117,7 @@ def getCaseNumber(x,y,nX,nY):
 #  function getWalls
 #  this function return a list containing the number of the wall of a case
 # in the list the walls are orderd as follow,
-#  [north, south, est, ouest]
+#  [north, south, ouest, est]
 #  if a wall should not exist, is value is -1
 # @param
 # @x, the x coords of our case
@@ -127,10 +128,10 @@ def getWalls(n, nX,nY):
     walls = {}
     x, y = getCoords(n,nX,nY)
 
-    walls["N"] = append(x + y * nX)
-    walls.append(x + (y+1) * nX)
-    walls.append(1 + x + y * (nX+1))
-    walls.append(x + y * (nX+1))
+    walls["N"] = x + y * nX
+    walls["S"] = x + (y+1) * nX
+    walls["E"] = 1 + x + y * (nX+1)
+    walls["O"] = x + y * (nX+1)
 
     return walls
 
@@ -146,158 +147,123 @@ def getCoords(N, nX,nY):
     if N >= 0:
         y=N//nX
         x=N%nX
+        print("get coords : n = " + str(N) + " x = " + str(x) + " y = " + str(y))
         return x,y
 
 
+def addWallsToCavity(caseWalls, horizontalWalls, verticalWalls, removedHorizontalWalls , removedVerticalWalls):
+    if not caseWalls["N"] in verticalWalls and not caseWalls["N"] in removedVerticalWalls:
+        verticalWalls.append(caseWalls["N"])
+    if not caseWalls["S"] in verticalWalls and not caseWalls["S"] in removedVerticalWalls:
+        verticalWalls.append(caseWalls["S"])
 
-def getNextCandidat(n, front, cave, verticalWalls, horizontalWalls, nX, nY, badVoisin):
-    if len(front) <= 0:
-        return [-3]
+    if not caseWalls["E"] in horizontalWalls and not caseWalls["E"] in removedHorizontalWalls:
+        horizontalWalls.append(caseWalls["E"])
 
-    if 0 in cave and (nX * nY -1) in cave :
-        return [-4]
+    if not caseWalls["O"] in horizontalWalls and not caseWalls["O"] in removedHorizontalWalls:
+        horizontalWalls.append(caseWalls["O"])
 
-    nextCandidat = -1
-    x, y = getCoords(n,nX,nY)
-    neibour= voisins(x,y,nX,nY)
+    return (horizontalWalls,verticalWalls)
 
-    for bad in badVoisin:
-        if bad in neibour:
-            neibour = retirer(neibour, bad)
+def removeRandomWall(caseWalls, horizontalWalls, verticalWalls, removedHorizontalWalls , removedVerticalWalls):
+    hCandidat = []
+    vCandidat = []
+    if caseWalls["N"] in verticalWalls and not caseWalls["N"] in removedVerticalWalls:
+        vCandidat.append(caseWalls["N"])
+    if caseWalls["S"] in verticalWalls and not caseWalls["S"] in removedVerticalWalls:
+        vCandidat.append(caseWalls["S"])
 
-    if len(neibour) == 0:
-        return [-2]
+    if caseWalls["E"] in horizontalWalls and not caseWalls["E"] in removedHorizontalWalls:
+        hCandidat.append(caseWalls["E"])
 
-    candidats = []
-    walls = getWalls(x, y, nX, nY)
-    walltoRemove = -1
-    index = 0
-    findValideNeibour = False
-    while len(neibour) > 0 and not findValideNeibour:
-        currentNeibour = neibour[random.randint(0, len(neibour))]
-        if currentNeibour in front and currentNeibour not in cave:
+    if caseWalls["O"] in horizontalWalls and not caseWalls["O"] in removedHorizontalWalls:
+        hCandidat.append(caseWalls["O"])
 
-        else:
-            neibour = retirer(neibour, currentNeibour)
-    
-    for candidat in candidats:
-        tmpx, tmpy =getCoords(candidat, nX, nY)
-        candidatWalls = getWalls(tmpx, tmpy, nX, nY)
-        for index  in range(len(candidatWalls)):
-            tmpWall = candidatWalls[index]
-            if index < 2:
-                tmpVerticalwalls = walls[0:2]
-                if tmpWall in tmpVerticalwalls  and tmpWall in verticalWalls:
-                    walltoRemove = [index, tmpWall]
-                    nextCandidat = candidat
+    if len(hCandidat) > 0 and len(vCandidat) > 0:
+        vOrH = random.randint(0,1)
+        if vOrH == 0 :
+            chosenWall = vCandidat[random.randint(0, len(vCandidat)-1)]
+            removedVerticalWalls.append(chosenWall)
+            verticalWalls.remove(chosenWall)
+        elif vOrH == 1:
+            chosenWall = hCandidat[random.randint(0, len(hCandidat)-1)]
+            removedHorizontalWalls.append(chosenWall)
+            horizontalWalls.remove(chosenWall)
 
-            elif index > 2:
-                tmpHorizontalWalls = walls[2:]
-                if tmpWall in tmpHorizontalWalls and tmpWall in horizontalWalls:
-                    walltoRemove = [index, tmpWall]
-                    nextCandidat = candidat
-    
-    
-    print(nextCandidat)
-    if nextCandidat!= -1:
-        return [nextCandidat, walltoRemove[0], walltoRemove[1]]
-    else:
-        return [-1]
+    elif len(vCandidat) > 0 and len(hCandidat) == 0:
+        chosenWall = vCandidat[random.randint(0, len(vCandidat)-1)]
+        removedVerticalWalls.append(chosenWall)
+        verticalWalls.remove(chosenWall)
+
+    elif len(vCandidat) == 0 and len(hCandidat) >0:
+        chosenWall = hCandidat[random.randint(0, len(hCandidat)-1)]
+        removedHorizontalWalls.append(chosenWall)
+        horizontalWalls.remove(chosenWall)
+
+    return (horizontalWalls, verticalWalls, removedHorizontalWalls, removedVerticalWalls)
 
 
 
 
-            
 def laby(nX, nY, largeurCase):
-    front = iota(nX*nY )
+    front = []
     cave = []
-    horizontalWalls = iota(nX * nY -1)
-    verticalWalls = iota(nY * nX -1)
+    horizontalWalls = iota(nX*(nY+1))
+    verticalWalls = iota((nX+1)*nY)
     horizontalWalls.pop(0) # setting the entrance of the laby
     horizontalWalls.pop(-1) # setting the exit of the laby
+    x = random.randint(0, nX*nY-1)
+    y = random.randint(0, nX*nY-1)
+    case = getCaseNumber(x, y, nX, nY)
+    caseWalls = getWalls(case,nX,nY)
+    cave = ajouter(cave, case)
+    caveHorizontalWalls = []
+    caveVerticalWalls = []
     removedHorizontalWalls = []
     removedVerticalWalls = []
-    currentCase = getRandomCase(front)
-    previousCase = currentCase
-    x, y = getCoords(currentCase[1], nX, nY)
-    currentCaseWalls = getWalls(x,y,nX,nY)
-    nextRemove = voisins(x, y, nX, nY)
-    wallToRemove = getRandomCase(currentCaseWalls)
-    if wallToRemove[0] < 2:
-        verticalWalls = retirer(verticalWalls, wallToRemove[1])
-        removedVerticalWalls = ajouter(removedVerticalWalls, wallToRemove[1])
-    else:
-        horizontalWalls = retirer(horizontalWalls, wallToRemove[1])
-        removedHorizontalWalls = ajouter(removedHorizontalWalls, wallToRemove[1])
-        
-        
-    cave = ajouter(cave, currentCase[1])
-    front = retirer(front, currentCase[1])
-
-    # getting the new case that is a part of the cave
-    for candidat in nextRemove:
-        tmpx, tmpy = getCoords(candidat, nX, nY)
-        tmpWalls = getWalls(tmpx, tmpy, nX, nY)
-        if wallToRemove[1]  in tmpWalls:
-            previousCase = currentCase
-            currentCase[0] = front.index(candidat)
-            currentCase[1] = candidat
-            currentCaseWalls = tmpWalls
-            currentCaseWalls = retirer(currentCaseWalls , wallToRemove[1])
-            front = retirer(front, candidat)
-            cave = ajouter(cave, candidat)
-            break
+    caveHorizontalWalls, caveVerticalWalls = addWallsToCavity(caseWalls, caveHorizontalWalls, caveVerticalWalls, removedHorizontalWalls , removedVerticalWalls)
+    print(x)
+    print(y)
+    print(case)
 
     finish = False
-    badVoisins = []
     while not finish:
-        result = getNextCandidat(currentCase[1],front,cave, verticalWalls, horizontalWalls, nX, nY, badVoisins)
-        print(result)
+        neighbours = voisins(x,y,nX,nY)
+        for voisin in neighbours:
+            if voisin not in cave and voisin not in front:
+                front = ajouter(front, voisin)
+                # print(front)
 
-        if result[0] < -2:
-            print("soucis ou fin : ", result)
+        case= front[random.randint(0, len(front) - 1)]
+        x,y = getCoords(case,nX,nY)
+        caseWalls = getWalls(case,nX,nY)
+        caveHorizontalWalls, caveVerticalWalls = addWallsToCavity(caseWalls, caveHorizontalWalls, caveVerticalWalls, removedHorizontalWalls, removedVerticalWalls)
+        caveHorizontalWalls, caveVerticalWalls, removedHorizontalWalls, removedVerticalWalls = removeRandomWall(caseWalls, caveHorizontalWalls, caveVerticalWalls, removedHorizontalWalls, removedVerticalWalls)
+        cave = ajouter(cave, case)
+        front = retirer(front, case)
+        # cave = ajouter(cave, case)
+
+        if len(front) == 0:
+            print("soucis la je crois")
+            print(nX * nY)
+            print(cave)
             finish = True
-
-        elif result[0] == -1:
-            badVoisins.append(currentCase[1])
-            # next()
-            # cave = retirer(cave, currentCase[1])
-            # front = ajouter()
-            # result = getNextCandidat(currentCase[1],front,cave,verticalWalls,horizontalWalls,nX,nY,badVoisin)
-            print("aucun voisin trouver")
-            # finish = True
-
-        else:
-            if result[1] < 2:
-                verticalWalls = retirer(verticalWalls, result[2])
-            elif result[1] > 2:
-                horizontalWalls = retirer(horizontalWalls, result[2])
-
-            previousCase = currentCase
-            currentCase[0] = front.index(result[0])
-            currentCase[1] = result[0]
-            front = retirer(front, result[0])
-            cave = ajouter(cave, result[0])
-            badVoisins = []
-
-
-
-
-
-
-
-
-
-
 
 
 
 
     print("have to draw now")
-    print(cave.sort())
+    # print(cave.sort())
     print(len(cave))
+    print(len(front))
+    print(cave)
     print(front)
-    print(verticalWalls)
-    print(horizontalWalls)
+    print(caveVerticalWalls)
+    print(caveHorizontalWalls)
+    print(removedHorizontalWalls)
+    print(removedVerticalWalls)
+    # print(verticalWalls)
+    # print(horizontalWalls)
+    print(getWalls(10,3,3))
 
-# laby(3, 3, 20)
+laby(3, 3, 20)
