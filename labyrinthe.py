@@ -66,14 +66,11 @@ def ajouter(tab, x):
 # @tab, the list where we will remove an element
 # @x, the element to remove
 def retirer(tab, x):
-    # print("function retirer")
-    # print(tab)
-    # print(x)
     if x in tab:
         del tab[tab.index(x)]
         return tab
     else:
-        # print("error, x must be in tab, nothing have been deleted")
+        print("error, x must be in tab, nothing have been deleted")
         return tab
 
 
@@ -89,16 +86,17 @@ def voisins(x,y,nX,nY):
     list=[]
 
     if x >= 0 and y>=0 and nX >=0 and nY >=0:
-        if x>0:
-            list.append(x-1+y*nX)
+        if x-1 >= 0 and x-1 < nX and y < nY:
+            list.append((x-1) + y*nX)
         
-        if y>0:
+        if y-1 >= 0 and y-1 <nY and x < nX:
             list.append(x + (y - 1) * nX)
 
-        if y-1 < nY:
+        if y+1 < nY and x < nX:
             list.append(x+(y+1)*nX)
-        if x+1 < nX:
-            list.append(x + 1 + y * nX)
+
+        if x+1 < nX and y < nY:
+            list.append((x + 1) + y * nX)
     
     return list
 
@@ -115,10 +113,8 @@ def getCaseNumber(x,y,nX,nY):
 
 
 #  function getWalls
-#  this function return a list containing the number of the wall of a case
-# in the list the walls are orderd as follow,
+#  this function return a dictionnary containing the number of the wall of a case
 #  [north, south, ouest, est]
-#  if a wall should not exist, is value is -1
 # @param
 # @x, the x coords of our case
 # @y, the y coords of our case
@@ -135,28 +131,37 @@ def getWalls(n, nX,nY):
 
     return walls
 
-
-def getRandomCase(tab):
-    index = random.randint(0,len(tab) -1 )
-    return [index, tab[index]]
-
-
-
-
-def getCoords(N, nX,nY):
-    if N >= 0:
-        y=N//nX
-        x=N%nX
-        print("get coords : n = " + str(N) + " x = " + str(x) + " y = " + str(y))
+# function getCoords
+# this function return the x,y coordinate of a case
+# @param,
+# @n, the number of the case
+# @nX, the width of the laby
+# @nY, the hight of the laby
+def getCoords(n, nX, nY):
+    #  validating the case number
+    if n >= 0 and n < nX*nY:
+        y=n//nX
+        x=n%nX
         return x,y
 
+    else:
+        return -1
 
+# function addWallsToCavity
+# this function add a walls to the cavity, if they are not already in
+# or if they haven't been already removed
+# and return the modified list
+# @param
+# @caseWalls, tha list of wall of our case
+# @horizontalWalls, the list of horizontal walls in the cavity 
+# @verticalWalls, the list of vertical walls in the cavity 
+# @removedHorizontalWalls , the list of already removed horizontal walls in the cavity
+# @removedVerticalWalls, the list of already removed verticalwalls in the cavity
 def addWallsToCavity(caseWalls, horizontalWalls, verticalWalls, removedHorizontalWalls , removedVerticalWalls):
     if not caseWalls["N"] in verticalWalls and not caseWalls["N"] in removedVerticalWalls:
         verticalWalls.append(caseWalls["N"])
     if not caseWalls["S"] in verticalWalls and not caseWalls["S"] in removedVerticalWalls:
         verticalWalls.append(caseWalls["S"])
-
     if not caseWalls["E"] in horizontalWalls and not caseWalls["E"] in removedHorizontalWalls:
         horizontalWalls.append(caseWalls["E"])
 
@@ -165,20 +170,30 @@ def addWallsToCavity(caseWalls, horizontalWalls, verticalWalls, removedHorizonta
 
     return (horizontalWalls,verticalWalls)
 
+# function removeRandomWall
+# this function remove a random wall to link the case to the cavity
+#  this function return the list of wall once modified
+# @param
+# @caseWalls, tha list of wall of our case
+# @horizontalWalls, the list of horizontal walls in the cavity 
+# @verticalWalls, the list of vertical walls in the cavity 
+# @removedHorizontalWalls , the list of already removed horizontal walls in the cavity
+# @removedVerticalWalls, the list of already removed verticalwalls in the cavity
 def removeRandomWall(caseWalls, horizontalWalls, verticalWalls, removedHorizontalWalls , removedVerticalWalls):
     hCandidat = []
     vCandidat = []
+    # validating the vertical candidat
     if caseWalls["N"] in verticalWalls and not caseWalls["N"] in removedVerticalWalls:
         vCandidat.append(caseWalls["N"])
     if caseWalls["S"] in verticalWalls and not caseWalls["S"] in removedVerticalWalls:
         vCandidat.append(caseWalls["S"])
-
+    # validating the horizontal candidats
     if caseWalls["E"] in horizontalWalls and not caseWalls["E"] in removedHorizontalWalls:
         hCandidat.append(caseWalls["E"])
 
     if caseWalls["O"] in horizontalWalls and not caseWalls["O"] in removedHorizontalWalls:
         hCandidat.append(caseWalls["O"])
-
+    # checking how many candidat have been found, in order to make the corect selection
     if len(hCandidat) > 0 and len(vCandidat) > 0:
         vOrH = random.randint(0,1)
         if vOrH == 0 :
@@ -204,16 +219,21 @@ def removeRandomWall(caseWalls, horizontalWalls, verticalWalls, removedHorizonta
 
 
 
-
+# def laby
+# this function generate and draw a laby of size nX*nY, and where the width of case
+# largeurCase
+# this laby is sure to have an entrance and an exit
+# @param
+# @nX, the width (number of case) of our laby
+# @nY, the hight (number of case) of our laby
+# @largeurCase, the width (in pixel) for a case of our laby 
 def laby(nX, nY, largeurCase):
-    front = []
-    cave = []
-    horizontalWalls = iota(nX*(nY+1))
-    verticalWalls = iota((nX+1)*nY)
-    horizontalWalls.pop(0) # setting the entrance of the laby
-    horizontalWalls.pop(-1) # setting the exit of the laby
-    x = random.randint(0, nX*nY-1)
-    y = random.randint(0, nX*nY-1)
+    front = []  # group of neighbour of the cavity
+    cave = [] # our cavity
+
+    # generating random coordinate for our initial cavity
+    x = random.randint(0, nX-1)
+    y = random.randint(0, nY-1)
     case = getCaseNumber(x, y, nX, nY)
     caseWalls = getWalls(case,nX,nY)
     cave = ajouter(cave, case)
@@ -222,48 +242,35 @@ def laby(nX, nY, largeurCase):
     removedHorizontalWalls = []
     removedVerticalWalls = []
     caveHorizontalWalls, caveVerticalWalls = addWallsToCavity(caseWalls, caveHorizontalWalls, caveVerticalWalls, removedHorizontalWalls , removedVerticalWalls)
-    print(x)
-    print(y)
-    print(case)
 
-    finish = False
-    while not finish:
+    #  setting the entrance and exit of the laby
+    caveHorizontalWalls = ajouter(caveHorizontalWalls,0)
+    caveHorizontalWalls = ajouter(caveHorizontalWalls, (nX*(nY+1) -1))
+    removedHorizontalWalls = ajouter(removedHorizontalWalls,0)
+    removedHorizontalWalls = ajouter(removedHorizontalWalls,(nX*(nY+1) -1))
+    # main loop to built our cavity
+    while len(cave) < (nX*nY) :
+
+        #  getting the neighbours of our last member of the cavity
         neighbours = voisins(x,y,nX,nY)
         for voisin in neighbours:
-            if voisin not in cave and voisin not in front:
+            # checking if the neighbour is a new one and not a part of the cavity
+            if not contient(front, voisin) and not contient(cave, voisin) :
                 front = ajouter(front, voisin)
-                # print(front)
 
-        case= front[random.randint(0, len(front) - 1)]
+        # checking the number of lasting neighbour, to apply the correct operation
+        if len(front) > 1:
+            case= front[random.randint(0, len(front) - 1)]
+        elif len(front) == 1:
+            case = front[0]
+        # creating our new entrance in the cavity, removing it from the front, and removing the walls to link it to the cavity
         x,y = getCoords(case,nX,nY)
         caseWalls = getWalls(case,nX,nY)
         caveHorizontalWalls, caveVerticalWalls = addWallsToCavity(caseWalls, caveHorizontalWalls, caveVerticalWalls, removedHorizontalWalls, removedVerticalWalls)
         caveHorizontalWalls, caveVerticalWalls, removedHorizontalWalls, removedVerticalWalls = removeRandomWall(caseWalls, caveHorizontalWalls, caveVerticalWalls, removedHorizontalWalls, removedVerticalWalls)
         cave = ajouter(cave, case)
         front = retirer(front, case)
-        # cave = ajouter(cave, case)
-
-        if len(front) == 0:
-            print("soucis la je crois")
-            print(nX * nY)
-            print(cave)
-            finish = True
-
-
-
 
     print("have to draw now")
-    # print(cave.sort())
-    print(len(cave))
-    print(len(front))
-    print(cave)
-    print(front)
-    print(caveVerticalWalls)
-    print(caveHorizontalWalls)
-    print(removedHorizontalWalls)
-    print(removedVerticalWalls)
-    # print(verticalWalls)
-    # print(horizontalWalls)
-    print(getWalls(10,3,3))
 
 laby(3, 3, 20)
